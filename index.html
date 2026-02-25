@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Compressor with Random Noise</title>
+</head>
+<body>
+    <h1>File Compressor with Random Noise</h1>
+    <p>Generate 5 random noise images, compress them into a zip file, and download.</p>
+
+    <canvas id="myCanvas" style="display:none;"></canvas>
+    <button id="generateZipBtn">Generate Noise Images and Download Zip</button>
+
+    <script src="jszip.min.js"></script>
+
+    <script>
+        const canvas = document.getElementById("myCanvas");
+        const ctx = canvas.getContext("2d");
+        const generateZipBtn = document.getElementById("generateZipBtn");
+        canvas.width = 300;
+        canvas.height = 300;
+
+        // Function to generate a random noise image
+        async function generateRandomNoiseImage() {
+            console.log("Generating random noise image...");
+            const imageData = ctx.createImageData(canvas.width, 1);
+            const data = imageData.data;
+
+            // Populate canvas with random noise
+            for (let y = 0; y < canvas.height; y++) {
+                for (let x = 0; x < canvas.width; x++) {
+                    const dataIndex = x * 4;
+                    data[dataIndex] = Math.floor(Math.random() * 255);      // Red
+                    data[dataIndex + 1] = Math.floor(Math.random() * 255);  // Green
+                    data[dataIndex + 2] = Math.floor(Math.random() * 255);  // Blue
+                    data[dataIndex + 3] = 255;                              // Alpha
+                }
+                ctx.putImageData(imageData, 0, y);
+            }
+
+            // Return the canvas as a data URL (PNG format)
+            return canvas.toDataURL("image/png");
+        }
+
+        generateZipBtn.addEventListener('click', async () => {
+            try {
+                console.log("Button clicked, starting process...");
+                const zip = new JSZip();
+
+                // Generate 5 random noise images
+                for (let i = 1; i <= 5; i++) {
+                    const dataURL = await generateRandomNoiseImage();
+                    console.log(`Generated image ${i}`);
+
+                    // Convert data URL to Blob and add to the ZIP file
+                    const response = await fetch(dataURL);
+                    const blob = await response.blob();
+                    zip.file(`noise_image_${i}.png`, blob);
+                }
+
+                console.log("Generating ZIP file...");
+                // Generate the ZIP file and trigger download
+                const zipBlob = await zip.generateAsync({ type: 'blob' });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(zipBlob);
+                link.download = 'random_noise_images.zip';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                console.log("ZIP file generated and download triggered.");
+            } catch (error) {
+                console.error("An error occurred:", error);
+            }
+        });
+    </script>
+</body>
+</html>
+
